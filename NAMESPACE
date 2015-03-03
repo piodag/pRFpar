@@ -1,0 +1,8 @@
+export( pRF, sigplot)
+importFrom( reshape2,melt) 
+import( magrittr)
+import( ggplot2)
+importFrom(dplyr, mutate, filter,count)
+importFrom( randomForest, randomForest,importance)
+importFrom( permute, shuffleSet) 
+importFrom( multtest, mt.rawp2adjp)
