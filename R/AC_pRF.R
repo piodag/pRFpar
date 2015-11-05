@@ -35,7 +35,7 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
   #Fit original random forest
   
   message("fitting original random forest")
-  RF.data<-randomForest(y=response,x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE)
+  RF.data<-randomForest(y=response,x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE,...)
   
   if(type=="classification"){ 
     
@@ -107,7 +107,7 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
   
   message("adjusting for FDR using two-step BH")
   
-  FDR<-mt.rawp2adjp(rawp=Res.table$p.value,proc="BH",alpha=0.05)
+  FDR<-mt.rawp2adjp(rawp=Res.table$p.value,proc="BH",alpha=alpha)
   fdr.vec<-FDR$adjp[order(FDR$index)]
   Res.table$FDR<-fdr.vec
   
