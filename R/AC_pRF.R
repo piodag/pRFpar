@@ -1,9 +1,13 @@
 #Appease the gods of CRAN
 
 m<-FDR<-value<-variable<-`.`<-Feature.id<-Importance<-NULL
+#' @import multtest reshape2 ggplot2 permute dplyr
+#' @importFrom randomForest randomForest importance
+ 
 
 #PermutationRandomForest
 
+#' @export
 pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classification","regression"),ntree=500,seed=12345,...){
   
   #Set seed
@@ -107,9 +111,11 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
   
   message("adjusting for FDR using two-step BH")
   
-  FDR<-mt.rawp2adjp(rawp=Res.table$p.value,proc="BH",alpha=alpha)
-  fdr.vec<-FDR$adjp[order(FDR$index)]
-  Res.table$FDR<-fdr.vec
+  FDR<-mt.rawp2adjp(rawp=Res.table$p.value,proc="TSBH",alpha=alpha)
+ 
+  fdr.vec<-FDR$adjp[,2]
+  index<-FDR$index
+  Res.table$FDR<-fdr.vec[order(index)]
   
   Res.table$Feature.id<-pid
   
@@ -123,6 +129,7 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
 
 #Plots for significant features, relative to null distribution
 
+#' @export
 sigplot<-function(pRF.list,threshold=0.05){
     
   #Create dataframe
@@ -138,7 +145,7 @@ sigplot<-function(pRF.list,threshold=0.05){
   
   count.tab<-df%>%mutate(value=round(value))%>%count(Feature.id,value)
   
-  qplot(data=df,geom='area',x=value,stat='bin',facets=~Feature.id,binwidth=1,alpha=I(.6),colour=I("black"))+
+  qplot(data=df,geom='freqpoly',binwidth=1,x=value,facets=~Feature.id,alpha=I(.6),colour=I("dodgerblue3"))+
     geom_point(data=df,aes(x=Importance,y=max(count.tab$n/2)),size=I(3),colour=I("red"))+
     theme(panel.grid.minor=element_blank())
   
