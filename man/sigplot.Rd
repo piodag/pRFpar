@@ -6,16 +6,16 @@ sigplot
 }
 \description{
 
-Plots observed importance and null distribution for a pRF output list. 
+Plots observed importance and null distribution for a pRFpar output list. 
 
 }
 \usage{
-sigplot(pRF.list,threshold)
+sigplot(pRFpar.list,threshold)
 }
 
 \arguments{
-  \item{pRF.list}{ 
-  output from a pRF run.
+  \item{pRFpar.list}{ 
+  output from a pRFpar run.
 }
   \item{threshold}{
   
@@ -36,7 +36,7 @@ Ankur Chakravarthy
 
 \seealso{
 
-pRF
+pRFpar
 
 }
 \examples{
@@ -49,14 +49,14 @@ data(iris)
 predictors=iris[,c(1:4)]
 colnames(predictors)<-colnames(iris[1:4])
 
-#Execute the main pRF function
-p.test<-pRF(response=factor(iris$Species),
+#Execute the main pRFpar function
+p.test<-pRFpar(response=factor(iris$Species),
 predictors=iris[,c(1:4)],n.perms=20,mtry=3,
 type="classification",alpha=0.05)
 
 #Plot
 
-sigplot(pRF.list=p.test,threshold=0.1)
+sigplot(pRFpar.list=p.test,threshold=0.1)
 
 }
 

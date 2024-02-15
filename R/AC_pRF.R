@@ -1,14 +1,16 @@
 #Appease the gods of CRAN
 
 m<-FDR<-value<-variable<-`.`<-Feature.id<-Importance<-NULL
-#' @import multtest reshape2 ggplot2 permute dplyr
+#' @import multtest reshape2 ggplot2 permute dplyr parallel
 #' @importFrom randomForest randomForest importance
  
 
 #PermutationRandomForest
 
 #' @export
-pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classification","regression"),ntree=500,seed=12345,...){
+pRFpar<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,
+                 type=c("classification","regression"),ntree=500,
+                 seed=12345,mc.cores=1,...){
   
   #Set seed
   
@@ -52,32 +54,38 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
   
   #Generate permuted random forest  
   
-  permutations.set<-shuffleSet(n=length(response),nset=n.perms)
+  permutations.set <- shuffleSet(n=length(response),nset=n.perms)
   
+  perm.set<-split(permutations.set,row(permutations.set))
+  
+  
+  # Functions for parallel processing
+  
+  perm.RF.class<-function(x,...){
+    randomForest(y=factor(response[x]),x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE)%>%
+      importance(.,type=2)%>%data.frame(.)%>%.$MeanDecreaseGini
+  }
+  
+  perm.RF.regr<-function(x,...){
+    randomForest(y=factor(response[x]),x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE)%>%
+      importance(.,type=1)%>%data.frame(.)%>%.$X.IncMSE
+  }
   
   
   #Begin populating a frame of importances
   
   message("populating permuted importance table")
   
-  
   list.vec<-list()
-  
-  for( i in 1:nrow(permutations.set)){
     
     if(type=="classification"){
       
-      list.vec[[i]]<- randomForest(y=factor(response[permutations.set[i,]]),x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE)%>%
-        importance(.,type=2)%>%data.frame(.)%>%.$MeanDecreaseGini;print(i)
+      list.vec<- mclapply(perm.set,perm.RF.class,mc.cores=mc.cores)
     } else {
       
-      list.vec[[i]]<- randomForest(y=response[permutations.set[i,]],x=(predictors),mtry=mtry,ntree=ntree,importance=TRUE)%>%
-        importance(.,type=1)%>%data.frame(.)%>%.$X.IncMSE;print(i)
-      
+      list.vec<- mclapply(perm.set,perm.RF.regr,mc.cores=mc.cores)
     }
     
-  }
-  
   perms.imp<-do.call(cbind,list.vec)
   
   #Put everything together into a list
@@ -124,18 +132,15 @@ pRF<-function(response,predictors,n.perms,alpha=0.05,mtry=NULL,type=c("classific
   }
 
 
-
-
-
 #Plots for significant features, relative to null distribution
 
 #' @export
-sigplot<-function(pRF.list,threshold=0.05){
+sigplot<-function(pRFpar.list,threshold=0.05){
     
   #Create dataframe
   
-  colnames(pRF.list$perms)<-make.unique(rep("perms",ncol(pRF.list$perms)))
-  df<-cbind(pRF.list$Res.table,pRF.list$obs,pRF.list$perms)
+  colnames(pRFpar.list$perms)<-make.unique(rep("perms",ncol(pRFpar.list$perms)))
+  df<-cbind(pRFpar.list$Res.table,pRFpar.list$obs,pRFpar.list$perms)
   
   df<-melt(df,id.vars=c(1:6),measure.vars=c(7:ncol(df)))
   colnames(df)[[6]]<-"Importance"
