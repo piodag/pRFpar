@@ -1,4 +1,4 @@
-# Ranfom Forest significance test - Permutation
+# Random Forest significance test - Permutations
 
 This is a fork oof the CRAN {pRF} package
 
